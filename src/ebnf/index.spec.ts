@@ -2,7 +2,7 @@ import { Parser, Grammar, Rule, Identifier } from ".";
 
 describe("Parser.Parse", () => {
   it("should return a Grammar instance", () => {
-    const source = `lhs = rhs ; foobar = barfoo ; `;
+    const source = `lhs = rhs ; foobar = "barfoo" ; `;
     const parser = new Parser();
     const grammar = parser.Parse(source);
     expect(grammar).toBeDefined();

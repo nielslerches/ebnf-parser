@@ -131,6 +131,29 @@ class Parser {
     }
   };
 
+  ParseSymbol = (source: string): SymbolT | undefined => {
+    if (`[]{}()'"=|.,;`.indexOf(source[this.cursor]) !== -1) {
+      const symbol: SymbolT = source[this.cursor] as SymbolT;
+      this.cursor++;
+      return symbol;
+    }
+  };
+
+  ParseCharacter = (source: string): CharacterT | undefined => {
+    return this.ParseAsAnyOf(
+      source[this.cursor],
+      this.ParseLetter,
+      this.ParseDigit,
+      this.ParseSymbol,
+      (source: string) => {
+        if (source[this.cursor] === "_") {
+          this.cursor++;
+          return "_";
+        }
+      }
+    );
+  };
+
   ParseIdentifier = (source: string): Identifier | undefined => {
     const firstCharacter = this.ParseLetter(source);
     if (!firstCharacter) {
@@ -162,12 +185,47 @@ class Parser {
     return new Identifier(value);
   };
 
-  ParseRHS = (source: string) => {
-    return this.ParseIdentifier(source);
+  ParseTerminal = (source: string): string | undefined => {
+    const quoteSymbol = this.ParseRaw(source[this.cursor], /\"|\'/);
+    console.log(quoteSymbol, source + "\n" + " ".repeat(this.cursor) + "^");
+
+    if (!quoteSymbol) {
+      return;
+    }
+
+    const firstCharacter = this.ParseCharacter(source);
+
+    if (!firstCharacter) {
+      return;
+    }
+
+    let terminal: string = firstCharacter;
+
+    while (true) {
+      const character = this.ParseCharacter(source);
+
+      if (!character) {
+        break;
+      }
+
+      terminal = terminal + character;
+    }
+
+    if (!terminal) {
+      return;
+    }
+
+    if (!this.ParseRaw(source, new RegExp(`${quoteSymbol}`))) {
+      return;
+    }
   };
 
   ParseLHS = (source: string) => {
     return this.ParseIdentifier(source);
+  };
+
+  ParseRHS = (source: string) => {
+    return this.ParseAsAnyOf(source, this.ParseIdentifier, this.ParseTerminal);
   };
 
   ParseRule = (source: string): Rule | undefined => {
@@ -183,6 +241,7 @@ class Parser {
     if (!this.ParseRaw(source, /\=/)) {
       return;
     }
+
     this.ParseWhitespace(source);
 
     const rhs = this.ParseRHS(source);
@@ -222,7 +281,7 @@ class Parser {
     source: string,
     ...parsers: ((source: string) => any)[]
   ): any | undefined => {
-    const originalPosition = this.cursor - 1;
+    const originalPosition = this.cursor;
 
     for (const parse of parsers) {
       const result = parse(source);
