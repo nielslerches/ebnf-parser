@@ -176,7 +176,13 @@ class Parser {
     if (!lhs) {
       return;
     }
+    this.cursor++;
 
+    this.ParseWhitespace(source);
+
+    if (!this.ParseRaw(source, /\=/)) {
+      return;
+    }
     this.ParseWhitespace(source);
 
     const rhs = this.ParseRHS(source);
@@ -184,10 +190,13 @@ class Parser {
     if (!rhs) {
       return;
     }
+    this.cursor++;
 
     this.ParseWhitespace(source);
 
-    this.ParseRaw(source, /;/);
+    if (!this.ParseRaw(source, /;/)) {
+      return;
+    }
 
     return new Rule(lhs, rhs);
   };
@@ -198,15 +207,12 @@ class Parser {
     while (this.cursor < source.length) {
       this.ParseWhitespace(source);
 
-      const character = source[this.cursor];
-
       const rule = this.ParseRule(source);
       if (!rule) {
         break;
       }
 
       grammar.rules.push(rule);
-      this.cursor++;
     }
 
     return grammar;

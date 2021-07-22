@@ -2,21 +2,23 @@ import { Parser, Grammar, Rule, Identifier } from ".";
 
 describe("Parser.Parse", () => {
   it("should return a Grammar instance", () => {
-    const source = `lhs = rhs ;`;
+    const source = `lhs = rhs ; foobar = barfoo ; `;
     const parser = new Parser();
     const grammar = parser.Parse(source);
     expect(grammar).toBeDefined();
     expect(grammar).toBeInstanceOf(Grammar);
-    expect(grammar.rules).toHaveLength(1);
+    expect(grammar.rules).toHaveLength(2);
   });
 });
 
 describe("Parser.ParseRule", () => {
   it("should return a Rule instance", () => {
     const parser = new Parser();
-    const rule = parser.ParseRule(`lhs=rhs;`);
+    const rule = parser.ParseRule(`lhs = rhs ;`) as Rule;
     expect(rule).toBeDefined();
     expect(rule).toBeInstanceOf(Rule);
+    expect((rule.lhs as Identifier).value).toBe("lhs");
+    expect((rule.rhs as Identifier).value).toBe("rhs");
   });
 });
 
